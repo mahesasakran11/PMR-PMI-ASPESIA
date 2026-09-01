@@ -6,1040 +6,359 @@
     <title>Sistem Absensi & Kas PMR/PMI ASPESIA</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
     <script>
-        // ⚠️ MASUKKAN KONFIGURASI FIREBASE ANDA DI SINI
-        const firebaseConfig = {
-            apiKey: "AIzaSyDEaTcknOj6y7df9kRJ1lZkKV3lnwFZyAo",
-  authDomain: "pmrpmiaspesia.firebaseapp.com",
-  projectId: "pmrpmiaspesia",
-  storageBucket: "pmrpmiaspesia.firebasestorage.app",
-  messagingSenderId: "1053600715329",
-  appId: "1:1053600715329:web:bacf9860a21927934eacc0",
-  measurementId: "G-ELZ95H0KS4"
-        };
+      // Konfigurasi Firebase Anda
+      const firebaseConfig = {
+        apiKey: "AIzaSyDEaTcknOj6y7df9kRJ1lZkKV3",
+        authDomain: "pmrpmiaspesia.firebaseapp.com",
+        projectId: "pmrpmiaspesia",
+        storageBucket: "pmrpmiaspesia.firebasestorage.app",
+        messagingSenderId: "1053600715329",
+        appId: "1:1053600715329:web:bacf9860a219",
+        measurementId: "G-ELZ9SHOKS4"
+      };
 
-        // Inisialisasi Firebase & Firestore
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
+      firebase.initializeApp(firebaseConfig);
+      const db = firebase.firestore();
     </script>
     <style>
         body { font-family: 'Plus Jakarta Sans', sans-serif; }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+<body class="bg-slate-50 text-slate-800 min-h-screen pb-12">
 
-    <header class="bg-red-700 text-white shadow-lg sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-            <div class="flex items-center space-x-3 cursor-pointer" onclick="showDashboard()">
-                <div class="bg-white text-red-700 p-2 rounded-full font-bold w-10 h-10 flex items-center justify-center shadow">
-                    <i class="fa-solid font-extrabold text-xl">+</i>
-                </div>
+    <!-- Header -->
+    <header class="bg-red-700 text-white shadow-md sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <div class="bg-white text-red-700 p-2 rounded-lg font-bold">PMR</div>
                 <div>
-                    <h1 class="font-extrabold text-lg sm:text-xl leading-tight tracking-wide">PMR/PMI ASPESIA</h1>
-                    <p class="text-[10px] sm:text-xs text-red-200">Sistem Absensi & Uang Kas (Online Cloud)</p>
+                    <h1 class="font-bold text-lg leading-tight">PMR/PMI ASPESIA</h1>
+                    <p class="text-xs text-red-200">Sistem Absensi & Kas</p>
                 </div>
             </div>
-            
-            <div id="nav-user-info" class="hidden flex items-center space-x-3">
-                <span id="user-badge" class="px-2.5 py-1 rounded-full text-xs font-semibold bg-red-800 text-red-100 border border-red-500">Anggota</span>
-                <span id="user-display-name" class="font-medium text-sm hidden md:inline">Nama User</span>
-                <button onclick="logout()" class="bg-red-800 hover:bg-red-900 text-white text-xs px-3 py-1.5 rounded-lg border border-red-600 transition flex items-center space-x-1">
-                    <i class="fa-solid fa-right-from-bracket"></i>
-                    <span class="hidden sm:inline">Keluar</span>
-                </button>
+            <div id="userInfo" class="text-right text-xs bg-red-800/60 px-3 py-1.5 rounded-lg border border-red-600">
+                <span id="userRoleBadge" class="font-bold block text-yellow-300">Loading...</span>
+                <span id="userNameDisplay">...</span>
             </div>
         </div>
     </header>
 
-    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <main class="max-w-7xl mx-auto px-4 mt-6 space-y-6">
 
-        <section id="sec-dashboard" class="space-y-6">
-            <div class="bg-gradient-to-r from-red-600 via-red-700 to-red-900 rounded-2xl p-6 text-white shadow-xl relative overflow-hidden">
-                <div class="relative z-10">
-                    <span class="bg-red-800/80 text-red-100 text-xs px-3 py-1 rounded-full font-semibold border border-red-400/30 uppercase tracking-wider mb-2 inline-block">Palang Merah Remaja</span>
-                    <h2 class="text-2xl sm:text-3xl font-extrabold mb-2">Portal PMR/PMI ASPESIA</h2>
-                    <p class="text-red-100 max-w-2xl text-sm sm:text-base leading-relaxed">Sistem pencatatan terintegrasi online real-time untuk absensi latihan rutin dan pembayaran kas bulanan.</p>
-                    <div class="mt-5 flex flex-wrap gap-3">
-                        <button onclick="openLoginModal('anggota')" class="bg-white text-red-700 hover:bg-red-50 font-bold px-5 py-2.5 rounded-xl shadow transition text-sm flex items-center space-x-2">
-                            <i class="fa-solid fa-user"></i>
-                            <span>Masuk Metode Anggota</span>
-                        </button>
-                        <button onclick="openLoginModal('inti')" class="bg-slate-900 hover:bg-black text-white font-bold px-5 py-2.5 rounded-xl shadow transition text-sm flex items-center space-x-2 border border-red-500">
-                            <i class="fa-solid fa-user-shield"></i>
-                            <span>Masuk Metode Inti / Ketua</span>
-                        </button>
-                    </div>
+        <!-- Login Card -->
+        <div id="loginCard" class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 max-w-md mx-auto">
+            <h2 class="text-xl font-bold mb-4 text-center text-slate-800">Masuk Akun</h2>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Nama Pengguna</label>
+                    <input type="text" id="loginName" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm" placeholder="Contoh: Sarah Aulia / Mahesa Sakran">
                 </div>
-                <i class="fa-solid fa-cloud text-9xl absolute -right-6 -bottom-6 text-white/10"></i>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Password</label>
+                    <input type="password" id="loginPassword" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm" placeholder="••••••••">
+                </div>
+                <button onclick="login()" class="w-full bg-red-700 hover:bg-red-800 text-white font-semibold py-2.5 rounded-lg text-sm transition">Masuk</button>
+            </div>
+        </div>
+
+        <!-- Dashboard Main (Hidden Default) -->
+        <div id="mainDashboard" class="hidden space-y-6">
+
+            <!-- Tombol Aksi Admin & Ganti Password -->
+            <div class="flex flex-wrap justify-between items-center gap-3 bg-white p-4 rounded-xl border border-slate-200">
+                <div class="flex gap-2">
+                    <button id="btnTambahAnggota" onclick="openModalTambah()" class="hidden bg-emerald-600 text-white px-4 py-2 rounded-lg text-xs font-semibold hover:bg-emerald-700 transition">
+                        <i class="fa-solid fa-user-plus mr-1"></i> Tambah Anggota/Inti
+                    </button>
+                    <button onclick="openModalPassword()" class="bg-slate-700 text-white px-4 py-2 rounded-lg text-xs font-semibold hover:bg-slate-800 transition">
+                        <i class="fa-solid fa-key mr-1"></i> Ganti Password
+                    </button>
+                </div>
+                <button onclick="logout()" class="bg-rose-100 text-rose-700 px-3 py-2 rounded-lg text-xs font-semibold hover:bg-rose-200 transition">
+                    Logout
+                </button>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex items-center space-x-4">
-                    <div class="p-4 bg-emerald-50 text-emerald-600 rounded-2xl">
-                        <i class="fa-solid fa-clipboard-user text-2xl"></i>
-                    </div>
-                    <div>
-                        <p class="text-xs text-slate-500 font-medium">Persentase Kehadiran Total</p>
-                        <h3 id="stat-global-presence" class="text-2xl font-bold text-slate-800">0%</h3>
-                        <p class="text-xs text-emerald-600 font-medium mt-0.5"><i class="fa-solid fa-circle-check"></i> Rata-Rata Seluruh Anggota</p>
-                    </div>
+            <!-- Ringkasan Stat -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="bg-white p-4 rounded-xl border border-slate-200">
+                    <p class="text-xs text-slate-500 font-medium">Total Anggota</p>
+                    <p id="statTotal" class="text-2xl font-bold text-slate-800 mt-1">0</p>
                 </div>
-
-                <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex items-center space-x-4">
-                    <div class="p-4 bg-blue-50 text-blue-600 rounded-2xl">
-                        <i class="fa-solid fa-wallet text-2xl"></i>
-                    </div>
-                    <div>
-                        <p class="text-xs text-slate-500 font-medium">Kepatuhan Uang Kas</p>
-                        <h3 id="stat-global-kas" class="text-2xl font-bold text-slate-800">0%</h3>
-                        <p class="text-xs text-blue-600 font-medium mt-0.5"><i class="fa-solid fa-receipt"></i> Status Aman</p>
-                    </div>
+                <div class="bg-white p-4 rounded-xl border border-slate-200">
+                    <p class="text-xs text-slate-500 font-medium">Total Kas Terkumpul</p>
+                    <p id="statKas" class="text-2xl font-bold text-emerald-600 mt-1">Rp 0</p>
                 </div>
-
-                <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex items-center space-x-4 sm:col-span-2 lg:col-span-1">
-                    <div class="p-4 bg-purple-50 text-purple-600 rounded-2xl">
-                        <i class="fa-solid fa-users text-2xl"></i>
-                    </div>
-                    <div>
-                        <p class="text-xs text-slate-500 font-medium">Total Anggota Terdaftar</p>
-                        <h3 id="stat-total-members" class="text-2xl font-bold text-slate-800">0</h3>
-                        <p class="text-xs text-purple-600 font-medium mt-0.5"><i class="fa-solid fa-database"></i> Tersimpan di Database Cloud</p>
-                    </div>
+                <div class="bg-white p-4 rounded-xl border border-slate-200">
+                    <p class="text-xs text-slate-500 font-medium">Peringatan (SP1/SP2)</p>
+                    <p id="statSP" class="text-2xl font-bold text-amber-600 mt-1">0</p>
+                </div>
+                <div class="bg-white p-4 rounded-xl border border-slate-200">
+                    <p class="text-xs text-slate-500 font-medium">Tarif Kas/Minggu</p>
+                    <p class="text-2xl font-bold text-slate-700 mt-1">Rp 2.000</p>
                 </div>
             </div>
 
-            <div class="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm space-y-4">
-                <div class="flex flex-wrap justify-between items-center gap-2">
-                    <h3 class="font-bold text-slate-800 text-lg flex items-center space-x-2">
-                        <i class="fa-solid fa-list-check text-red-600"></i>
-                        <span>Ringkasan Kehadiran & Status Kas (Live Sync)</span>
-                    </h3>
-                    <span class="text-xs bg-slate-100 text-slate-600 px-3 py-1 rounded-lg font-medium">
-                        Rutin Kas: <b class="text-red-700">Rp 2.000 / minggu</b>
-                    </span>
+            <!-- Tabel Data Anggota -->
+            <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
+                <div class="p-4 border-b border-slate-200 flex justify-between items-center">
+                    <h3 class="font-bold text-slate-800">Daftar Anggota & Pengurus</h3>
                 </div>
-
                 <div class="overflow-x-auto">
-                    <table class="w-full text-left text-sm text-slate-600">
-                        <thead class="bg-slate-50 text-xs font-semibold text-slate-500 uppercase">
+                    <table class="w-full text-left text-xs text-slate-600">
+                        <thead class="bg-slate-50 text-slate-700 font-semibold border-b border-slate-200">
                             <tr>
-                                <th class="p-3 rounded-l-lg">Nama Anggota</th>
-                                <th class="p-3">Peran</th>
-                                <th class="p-3">Tingkat Kehadiran</th>
-                                <th class="p-3">Status Kas Terakhir</th>
-                                <th class="p-3 rounded-r-lg">Status Kedisiplinan</th>
+                                <th class="p-3">Nama</th>
+                                <th class="p-3">Jabatan</th>
+                                <th class="p-3">Jumlah Absen</th>
+                                <th class="p-3">Status SP</th>
+                                <th class="p-3">Kas Dibayar</th>
+                                <th id="thAksi" class="p-3 text-right hidden">Aksi (Hapus)</th>
                             </tr>
                         </thead>
-                        <tbody id="public-member-table" class="divide-y divide-slate-100">
-                            <tr><td colspan="5" class="p-4 text-center text-slate-400">Memuat data dari server cloud...</td></tr>
+                        <tbody id="tableBody" class="divide-y divide-slate-100">
+                            <!-- Data Diisi via JS -->
                         </tbody>
                     </table>
                 </div>
             </div>
-        </section>
-
-        <section id="sec-anggota" class="hidden space-y-6">
-            <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex flex-wrap items-center justify-between gap-4">
-                <div class="flex items-center space-x-4">
-                    <div class="w-14 h-14 rounded-full bg-red-100 text-red-600 flex items-center justify-center font-bold text-xl shadow-inner border border-red-200">
-                        <span id="member-avatar">M</span>
-                    </div>
-                    <div>
-                        <h2 id="member-name-title" class="text-xl font-bold text-slate-800">Nama Anggota</h2>
-                        <p class="text-xs text-slate-500">Anggota PMR/PMI ASPESIA</p>
-                    </div>
-                </div>
-                <button onclick="openChangePasswordModal()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium px-4 py-2 rounded-xl transition flex items-center space-x-2 border border-slate-200">
-                    <i class="fa-solid fa-key"></i>
-                    <span>Ganti Password</span>
-                </button>
-            </div>
-
-            <div id="konsekuensi-alert" class="hidden rounded-2xl p-4 border flex items-start space-x-3">
-                <i id="konsekuensi-icon" class="fa-solid fa-triangle-exclamation text-2xl mt-0.5"></i>
-                <div>
-                    <h4 id="konsekuensi-title" class="font-bold text-sm">Pemberitahuan Konsekuensi Kehadiran</h4>
-                    <p id="konsekuensi-desc" class="text-xs mt-1 leading-relaxed"></p>
-                </div>
-            </div>
-
-            <div id="tunggakan-alert" class="hidden rounded-2xl p-4 border bg-amber-50 border-amber-200 text-amber-900 flex items-start space-x-3">
-                <i class="fa-solid fa-wallet text-2xl mt-0.5 text-amber-600"></i>
-                <div>
-                    <h4 class="font-bold text-sm">Status Tunggakan Kas</h4>
-                    <p id="tunggakan-desc" class="text-xs mt-1 leading-relaxed"></p>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
-                <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
-                    <p class="text-xs text-slate-500 font-medium">Persentase Kehadiran Saya</p>
-                    <div class="flex items-baseline space-x-2 mt-2">
-                        <span id="member-stat-presence-pct" class="text-3xl font-extrabold text-red-600">0%</span>
-                        <span id="member-stat-presence-count" class="text-xs text-slate-400">(0/0 Pertemuan)</span>
-                    </div>
-                </div>
-
-                <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
-                    <p class="text-xs text-slate-500 font-medium">Total Terbayar Kas</p>
-                    <div class="flex items-baseline space-x-2 mt-2">
-                        <span id="member-stat-kas-amount" class="text-3xl font-extrabold text-emerald-600">Rp 0</span>
-                        <span id="member-stat-kas-count" class="text-xs text-slate-400">(0 Pekan)</span>
-                    </div>
-                </div>
-
-                <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
-                    <p class="text-xs text-slate-500 font-medium">Jumlah Tidak Hadir (Alpa)</p>
-                    <div class="flex items-baseline space-x-2 mt-2">
-                        <span id="member-stat-alpa-count" class="text-3xl font-extrabold text-rose-600">0</span>
-                        <span class="text-xs text-slate-400">Pertemuan</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm space-y-4">
-                    <h3 class="font-bold text-slate-800 text-base flex items-center space-x-2">
-                        <i class="fa-solid fa-calendar-check text-red-600"></i>
-                        <span>Riwayat Kehadiran (Hadir / Sakit / Izin / Alpa)</span>
-                    </h3>
-                    <div class="overflow-y-auto max-h-80 pr-1">
-                        <table class="w-full text-left text-xs text-slate-600">
-                            <thead class="bg-slate-50 font-semibold text-slate-500 uppercase sticky top-0">
-                                <tr>
-                                    <th class="p-2.5">Tanggal & Hari</th>
-                                    <th class="p-2.5">Status</th>
-                                    <th class="p-2.5">Keterangan</th>
-                                </tr>
-                            </thead>
-                            <tbody id="member-presence-log" class="divide-y divide-slate-100"></tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm space-y-4">
-                    <h3 class="font-bold text-slate-800 text-base flex items-center space-x-2">
-                        <i class="fa-solid fa-coins text-amber-500"></i>
-                        <span>Riwayat Pembayaran & Tanggal Nunggak Kas</span>
-                    </h3>
-                    <div class="overflow-y-auto max-h-80 pr-1">
-                        <table class="w-full text-left text-xs text-slate-600">
-                            <thead class="bg-slate-50 font-semibold text-slate-500 uppercase sticky top-0">
-                                <tr>
-                                    <th class="p-2.5">Periode Kas</th>
-                                    <th class="p-2.5">Nominal</th>
-                                    <th class="p-2.5">Status & Tanggal</th>
-                                </tr>
-                            </thead>
-                            <tbody id="member-kas-log" class="divide-y divide-slate-100"></tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <section id="sec-inti" class="hidden space-y-6">
-            <div class="bg-slate-900 text-white p-6 rounded-2xl shadow-md flex flex-wrap items-center justify-between gap-4">
-                <div class="flex items-center space-x-4">
-                    <div class="w-14 h-14 rounded-full bg-red-600 text-white flex items-center justify-center font-bold text-xl shadow">
-                        <i class="fa-solid fa-user-gear"></i>
-                    </div>
-                    <div>
-                        <h2 id="inti-name-title" class="text-xl font-bold">Pengurus Inti</h2>
-                        <p class="text-xs text-red-400 font-medium">Pengurus Inti / Ketua PMR/PMI ASPESIA</p>
-                    </div>
-                </div>
-                <div class="flex flex-wrap gap-2">
-                    <button onclick="openAddMemberModal('anggota')" class="text-xs bg-red-600 hover:bg-red-700 text-white font-semibold px-4 py-2 rounded-xl transition flex items-center space-x-1.5 shadow">
-                        <i class="fa-solid fa-user-plus"></i>
-                        <span>Tambah Anggota</span>
-                    </button>
-                    <button onclick="openAddMemberModal('inti')" class="text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white font-semibold px-4 py-2 rounded-xl transition flex items-center space-x-1.5">
-                        <i class="fa-solid fa-shield-plus"></i>
-                        <span>Tambah Inti Baru</span>
-                    </button>
-                    <button onclick="openChangePasswordModal()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium px-3 py-2 rounded-xl transition">
-                        <i class="fa-solid fa-key"></i>
-                    </button>
-                </div>
-            </div>
-
-            <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm space-y-6">
-                <div class="flex border-b border-slate-200">
-                    <button id="tab-btn-kas" onclick="switchIntiTab('kas')" class="pb-3 px-4 font-bold text-sm text-red-600 border-b-2 border-red-600 flex items-center space-x-2">
-                        <i class="fa-solid fa-hand-holding-dollar"></i>
-                        <span>Kelola Uang Kas (Rp 2.000/mg)</span>
-                    </button>
-                    <button id="tab-btn-absensi" onclick="switchIntiTab('absensi')" class="pb-3 px-4 font-bold text-sm text-slate-500 hover:text-slate-800 flex items-center space-x-2">
-                        <i class="fa-solid fa-user-check"></i>
-                        <span>Kelola Absensi Rutin</span>
-                    </button>
-                </div>
-
-                <div id="subtab-kas" class="space-y-4">
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-xs sm:text-sm text-slate-600">
-                            <thead class="bg-slate-50 font-semibold text-slate-500 uppercase">
-                                <tr>
-                                    <th class="p-3 rounded-l-lg">Nama Anggota/Inti</th>
-                                    <th class="p-3">Peran</th>
-                                    <th class="p-3">Total Terbayar</th>
-                                    <th class="p-3">Status Tunggakan</th>
-                                    <th class="p-3 text-right rounded-r-lg">Aksi Bayar Kas</th>
-                                </tr>
-                            </thead>
-                            <tbody id="inti-kas-table" class="divide-y divide-slate-100"></tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <div id="subtab-absensi" class="hidden space-y-4">
-                    <div class="flex flex-wrap justify-between items-center gap-3 bg-slate-50 p-4 rounded-xl border border-slate-200/80">
-                        <div class="space-y-1">
-                            <h3 class="font-bold text-slate-800 text-sm">Pengaturan Hari & Tanggal Absensi</h3>
-                            <p class="text-xs text-slate-500">Pilih hari dan tanggal sebelum menyimpan presensi seluruh anggota.</p>
-                        </div>
-                        <div class="flex flex-wrap items-center gap-2">
-                            <div>
-                                <label class="block text-[10px] font-bold text-slate-500 uppercase">Hari</label>
-                                <select id="attendance-day-input" class="text-xs px-2.5 py-1.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 font-semibold bg-white">
-                                    <option value="Jumat">Jumat</option>
-                                    <option value="Sabtu">Sabtu</option>
-                                    <option value="Minggu">Minggu</option>
-                                    <option value="Senin">Senin</option>
-                                    <option value="Selasa">Selasa</option>
-                                    <option value="Rabu">Rabu</option>
-                                    <option value="Kamis">Kamis</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-[10px] font-bold text-slate-500 uppercase">Tanggal</label>
-                                <input type="date" id="attendance-date-input" class="text-xs px-2.5 py-1.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 font-semibold bg-white">
-                            </div>
-                            <div class="pt-3">
-                                <button onclick="saveAttendanceToday()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-4 py-1.5 rounded-lg transition flex items-center space-x-1.5 shadow">
-                                    <i class="fa-solid fa-cloud-arrow-up"></i>
-                                    <span>Simpan Absensi ke Cloud</span>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-xs sm:text-sm text-slate-600">
-                            <thead class="bg-slate-50 font-semibold text-slate-500 uppercase">
-                                <tr>
-                                    <th class="p-3 rounded-l-lg">Nama Anggota</th>
-                                    <th class="p-3">Peran</th>
-                                    <th class="p-3">Total Alpa</th>
-                                    <th class="p-3 rounded-r-lg">Set Status Kehadiran Hari Ini</th>
-                                </tr>
-                            </thead>
-                            <tbody id="inti-absensi-table" class="divide-y divide-slate-100"></tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </section>
-
+        </div>
     </main>
 
-    <footer class="bg-white border-t border-slate-200 mt-auto py-4">
-        <div class="max-w-7xl mx-auto px-4 text-center text-xs text-slate-400">
-            &copy; 2026 Palang Merah Remaja (PMR/PMI ASPESIA) - Realtime Cloud Database Connected
-        </div>
-    </footer>
-
-    <div id="modal-login" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
-        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 relative space-y-4">
-            <button onclick="closeModal('modal-login')" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
-                <i class="fa-solid fa-xmark text-xl"></i>
-            </button>
-
-            <div class="text-center space-y-1">
-                <div id="login-icon-bg" class="w-12 h-12 rounded-2xl bg-red-100 text-red-600 mx-auto flex items-center justify-center text-xl font-bold">
-                    <i id="login-icon" class="fa-solid fa-user"></i>
-                </div>
-                <h3 id="login-title" class="text-lg font-bold text-slate-800">Masuk Metode Anggota</h3>
-                <p id="login-subtitle" class="text-xs text-slate-500">Masukkan Nama dan Password Anda</p>
+    <!-- Modal Tambah Anggota -->
+    <div id="modalTambah" class="fixed inset-0 bg-black/50 hidden items-center justify-center p-4 z-50">
+        <div class="bg-white p-6 rounded-xl max-w-md w-full space-y-4">
+            <h3 class="font-bold text-base text-slate-800">Tambah Anggota / Pengurus Baru</h3>
+            <div>
+                <label class="block text-xs font-semibold mb-1">Nama Lengkap</label>
+                <input type="text" id="addNama" class="w-full p-2 border rounded-lg text-sm">
             </div>
-
-            <form onsubmit="handleLogin(event)" class="space-y-4">
-                <input type="hidden" id="login-role-type" value="anggota">
-                <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">Nama Lengkap</label>
-                    <input type="text" id="login-fullname" required placeholder="Contoh: Mahesa Sakran Muhammad Rizwar" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-red-500 focus:outline-none">
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">Password</label>
-                    <input type="password" id="login-password" required placeholder="••••••••" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-red-500 focus:outline-none">
-                </div>
-
-                <div id="login-error" class="hidden text-xs text-rose-600 font-medium bg-rose-50 p-2.5 rounded-lg border border-rose-200 text-center">
-                    Nama atau password salah!
-                </div>
-
-                <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 rounded-xl text-xs shadow transition">
-                    Masuk Sekarang
-                </button>
-            </form>
-        </div>
-    </div>
-
-    <div id="modal-kas" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
-        <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 relative space-y-4">
-            <button onclick="closeModal('modal-kas')" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
-                <i class="fa-solid fa-xmark text-xl"></i>
-            </button>
-
-            <div class="text-center space-y-1">
-                <h3 class="text-lg font-bold text-slate-800">Proses Uang Kas Cloud</h3>
-                <p id="modal-kas-member-name" class="text-xs text-red-600 font-bold">Nama Anggota</p>
+            <div>
+                <label class="block text-xs font-semibold mb-1">Jabatan</label>
+                <select id="addRole" class="w-full p-2 border rounded-lg text-sm">
+                    <option value="Anggota">Anggota</option>
+                    <option value="Inti-Ketua">Inti-Ketua (Admin)</option>
+                </select>
             </div>
-
-            <div class="space-y-3">
-                <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">Pilih Tanggal / Periode Kas</label>
-                    <input type="date" id="kas-date-input" class="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-red-500 focus:outline-none font-semibold">
-                </div>
-
-                <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">Nominal Pembayaran (Rp)</label>
-                    <input type="number" id="kas-amount-input" value="2000" min="500" step="500" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold focus:ring-2 focus:ring-red-500 focus:outline-none">
-                </div>
-
-                <div class="flex space-x-2 pt-2">
-                    <button onclick="processKasPayment(true)" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl text-xs shadow transition">
-                        <i class="fa-solid fa-check mr-1"></i> Bayar Kas
-                    </button>
-                    <button onclick="processKasPayment(false)" class="flex-1 bg-rose-100 hover:bg-rose-200 text-rose-700 font-bold py-2.5 rounded-xl text-xs transition">
-                        Belum Bisa Bayar
-                    </button>
-                </div>
+            <div>
+                <label class="block text-xs font-semibold mb-1">Password Default</label>
+                <input type="password" id="addPassword" class="w-full p-2 border rounded-lg text-sm" value="123456">
+            </div>
+            <div class="flex justify-end gap-2">
+                <button onclick="closeModalTambah()" class="px-4 py-2 bg-slate-200 rounded-lg text-xs font-semibold">Batal</button>
+                <button onclick="simpanAnggotaBaru()" class="px-4 py-2 bg-emerald-600 text-white rounded-lg text-xs font-semibold">Simpan</button>
             </div>
         </div>
     </div>
 
-    <div id="modal-add-user" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
-        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 relative space-y-4">
-            <button onclick="closeModal('modal-add-user')" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
-                <i class="fa-solid fa-xmark text-xl"></i>
-            </button>
-
-            <div class="text-center space-y-1">
-                <h3 id="add-user-title" class="text-lg font-bold text-slate-800">Tambah Anggota Baru</h3>
-                <p class="text-xs text-slate-500">Otomatis tersimpan secara permanen di Database</p>
+    <!-- Modal Ganti Password -->
+    <div id="modalPassword" class="fixed inset-0 bg-black/50 hidden items-center justify-center p-4 z-50">
+        <div class="bg-white p-6 rounded-xl max-w-md w-full space-y-4">
+            <h3 class="font-bold text-base text-slate-800">Ganti Password</h3>
+            <div>
+                <label class="block text-xs font-semibold mb-1">Password Lama</label>
+                <input type="password" id="passLama" class="w-full p-2 border rounded-lg text-sm" placeholder="Masukkan password saat ini">
             </div>
-
-            <form onsubmit="handleAddUser(event)" class="space-y-3">
-                <input type="hidden" id="add-user-role" value="anggota">
-                <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">Nama Lengkap</label>
-                    <input type="text" id="add-user-fullname" required placeholder="Masukkan nama..." class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-red-500 focus:outline-none">
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">Password Login</label>
-                    <input type="password" id="add-user-password" required placeholder="Masukkan password..." class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-red-500 focus:outline-none">
-                </div>
-
-                <button type="submit" class="w-full bg-slate-900 hover:bg-black text-white font-bold py-2.5 rounded-xl text-xs shadow transition mt-2">
-                    Simpan User ke Cloud
-                </button>
-            </form>
-        </div>
-    </div>
-
-    <div id="modal-change-pass" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
-        <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 relative space-y-4">
-            <button onclick="closeModal('modal-change-pass')" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
-                <i class="fa-solid fa-xmark text-xl"></i>
-            </button>
-
-            <div class="text-center space-y-1">
-                <h3 class="text-lg font-bold text-slate-800">Ganti Password Akun</h3>
-                <p class="text-xs text-slate-500">Perbarui password di Database Cloud</p>
+            <div>
+                <label class="block text-xs font-semibold mb-1">Password Baru</label>
+                <input type="password" id="passBaru" class="w-full p-2 border rounded-lg text-sm" placeholder="Masukkan password baru">
             </div>
-
-            <form onsubmit="handleChangePassword(event)" class="space-y-3">
-                <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">Password Baru</label>
-                    <input type="password" id="new-password-input" required placeholder="••••••••" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-red-500 focus:outline-none">
-                </div>
-
-                <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 rounded-xl text-xs shadow transition mt-2">
-                    Simpan Password Baru
-                </button>
-            </form>
+            <div class="flex justify-end gap-2">
+                <button onclick="closeModalPassword()" class="px-4 py-2 bg-slate-200 rounded-lg text-xs font-semibold">Batal</button>
+                <button onclick="prosesGantiPassword()" class="px-4 py-2 bg-slate-800 text-white rounded-lg text-xs font-semibold">Update Password</button>
+            </div>
         </div>
     </div>
 
     <script>
-        let users = [];
         let currentUser = null;
-        let selectedKasUserId = null;
-        let tempAttendanceState = {};
 
-        // Inisialisasi awal & Listener Realtime Database
-        window.onload = function() {
-            document.getElementById('attendance-date-input').value = new Date().toISOString().split('T')[0];
-            listenToCloudDatabase();
-        };
-
-        // Realtime Synchronizer Firestore
-        function listenToCloudDatabase() {
-            db.collection("users").onSnapshot((snapshot) => {
-                users = [];
-                snapshot.forEach((doc) => {
-                    users.push({ id: doc.id, ...doc.data() });
+        // Inisialisasi Data Default jika database kosong
+        async function initData() {
+            const snapshot = await db.collection('users').get();
+            if (snapshot.empty) {
+                await db.collection('users').doc('admin_sarah').set({
+                    nama: "Sarah Aulia",
+                    role: "Inti-Ketua",
+                    password: "admin",
+                    absen: 0,
+                    kas: 0
                 });
-
-                // Jika database cloud masih kosong, buat akun default otomatis
-                if (users.length === 0) {
-                    initDefaultCloudData();
-                } else {
-                    renderGlobalDashboard();
-                    if (currentUser) {
-                        // Refresh current session data
-                        currentUser = users.find(u => u.id === currentUser.id) || currentUser;
-                        if (currentUser.role === 'anggota') renderAnggotaPortal();
-                        if (currentUser.role === 'inti') renderIntiPortal();
-                    }
-                }
-            });
-        }
-
-        function initDefaultCloudData() {
-            const defaultUsers = [
-                {
-                    name: 'Mahesa Sakran Muhammad Rizwar',
-                    password: 'Sakran11',
-                    role: 'anggota',
-                    kasHistory: [],
-                    attendanceHistory: []
-                },
-                {
-                    name: 'Sarah Aulia',
-                    password: '211210',
-                    role: 'inti',
-                    kasHistory: [],
-                    attendanceHistory: []
-                }
-            ];
-
-            defaultUsers.forEach(u => {
-                db.collection("users").add(u);
-            });
-        }
-
-        // --- NAVIGATION & LOGIN HANDLERS ---
-        function showDashboard() {
-            document.getElementById('sec-dashboard').classList.remove('hidden');
-            document.getElementById('sec-anggota').classList.add('hidden');
-            document.getElementById('sec-inti').classList.add('hidden');
-            document.getElementById('nav-user-info').classList.add('hidden');
-            currentUser = null;
-            renderGlobalDashboard();
-        }
-
-        function openLoginModal(role) {
-            document.getElementById('login-role-type').value = role;
-            document.getElementById('login-fullname').value = '';
-            document.getElementById('login-password').value = '';
-            document.getElementById('login-error').classList.add('hidden');
-
-            const title = document.getElementById('login-title');
-            const subtitle = document.getElementById('login-subtitle');
-            const iconBg = document.getElementById('login-icon-bg');
-            const icon = document.getElementById('login-icon');
-
-            if (role === 'anggota') {
-                title.innerText = 'Masuk Metode Anggota';
-                subtitle.innerText = 'Gunakan Nama & Password Anggota PMR/PMI ASPESIA';
-                iconBg.className = 'w-12 h-12 rounded-2xl bg-red-100 text-red-600 mx-auto flex items-center justify-center text-xl font-bold';
-                icon.className = 'fa-solid fa-user';
-            } else {
-                title.innerText = 'Masuk Metode Inti / Ketua';
-                subtitle.innerText = 'Akses khusus Pengurus Inti PMR/PMI ASPESIA';
-                iconBg.className = 'w-12 h-12 rounded-2xl bg-slate-900 text-white mx-auto flex items-center justify-center text-xl font-bold';
-                icon.className = 'fa-solid fa-user-shield';
+                await db.collection('users').doc('member_mahesa').set({
+                    nama: "Mahesa Sakran",
+                    role: "Anggota",
+                    password: "user",
+                    absen: 0,
+                    kas: 0
+                });
             }
-
-            document.getElementById('modal-login').classList.remove('hidden');
         }
+        initData();
 
-        function closeModal(id) {
-            document.getElementById(id).classList.add('hidden');
+        // Login
+        async function login() {
+            const nama = document.getElementById('loginName').value.trim();
+            const pass = document.getElementById('loginPassword').value.trim();
+
+            const snapshot = await db.collection('users').where('nama', '==', nama).where('password', '==', pass).get();
+
+            if (!snapshot.empty) {
+                const doc = snapshot.docs[0];
+                currentUser = { id: doc.id, ...doc.data() };
+                document.getElementById('loginCard').classList.add('hidden');
+                document.getElementById('mainDashboard').classList.remove('hidden');
+                document.getElementById('userRoleBadge').innerText = currentUser.role;
+                document.getElementById('userNameDisplay').innerText = currentUser.nama;
+
+                if (currentUser.role === 'Inti-Ketua') {
+                    document.getElementById('btnTambahAnggota').classList.remove('hidden');
+                    document.getElementById('thAksi').classList.remove('hidden');
+                }
+                loadDashboardData();
+            } else {
+                alert('Nama pengguna atau password salah!');
+            }
         }
 
         function logout() {
-            showDashboard();
+            currentUser = null;
+            location.reload();
         }
 
-        function handleLogin(e) {
-            e.preventDefault();
-            const nameInput = document.getElementById('login-fullname').value.trim();
-            const passInput = document.getElementById('login-password').value.trim();
-            const roleType = document.getElementById('login-role-type').value;
+        // Load & Render Data Realtime
+        function loadDashboardData() {
+            db.collection('users').onSnapshot(snapshot => {
+                const tbody = document.getElementById('tableBody');
+                tbody.innerHTML = '';
 
-            const foundUser = users.find(u => 
-                u.name.toLowerCase() === nameInput.toLowerCase() && 
-                u.password === passInput && 
-                u.role === roleType
-            );
+                let totalKas = 0;
+                let totalSP = 0;
+                let totalUser = snapshot.size;
 
-            if (foundUser) {
-                currentUser = foundUser;
-                closeModal('modal-login');
-                setupNavUser();
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    const docId = doc.id;
+                    totalKas += Number(data.kas || 0);
 
-                if (roleType === 'anggota') {
-                    renderAnggotaPortal();
-                } else {
-                    renderIntiPortal();
-                }
-            } else {
-                document.getElementById('login-error').classList.remove('hidden');
-            }
-        }
+                    // Evaluasi SP
+                    let spBadge = '<span class="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded font-semibold">Aman</span>';
+                    if (data.absen >= 3 && data.absen <= 4) {
+                        spBadge = '<span class="bg-amber-100 text-amber-700 px-2 py-0.5 rounded font-semibold">Lari Lapangan</span>';
+                    } else if (data.absen > 4 && data.absen < 7) {
+                        spBadge = '<span class="bg-orange-100 text-orange-700 px-2 py-0.5 rounded font-semibold">SP 1</span>';
+                        totalSP++;
+                    } else if (data.absen >= 7) {
+                        spBadge = '<span class="bg-rose-100 text-rose-700 px-2 py-0.5 rounded font-semibold">SP 2</span>';
+                        totalSP++;
+                    }
 
-        function setupNavUser() {
-            document.getElementById('nav-user-info').classList.remove('hidden');
-            document.getElementById('user-display-name').innerText = currentUser.name;
-            const badge = document.getElementById('user-badge');
-            
-            if (currentUser.role === 'inti') {
-                badge.innerText = 'Inti / Ketua';
-                badge.className = 'px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-400 text-slate-900 shadow-sm';
-            } else {
-                badge.innerText = 'Anggota';
-                badge.className = 'px-2.5 py-1 rounded-full text-xs font-semibold bg-red-800 text-red-100 border border-red-500';
-            }
-        }
+                    const isSelf = currentUser && currentUser.id === docId;
+                    const isAdmin = currentUser && currentUser.role === 'Inti-Ketua';
 
-        function getUnpaidKasInfo(user) {
-            const unpaidList = (user.kasHistory || []).filter(k => k.status === 'Belum Bayar');
-            if (unpaidList.length === 0) return { count: 0, earliestDate: null, total: 0 };
-            
-            unpaidList.sort((a, b) => new Date(a.periodDate) - new Date(b.periodDate));
-            return {
-                count: unpaidList.length,
-                earliestDate: unpaidList[0].periodDate,
-                total: unpaidList.length * 2000
-            };
-        }
-
-        // --- DASHBOARD RENDER ---
-        function renderGlobalDashboard() {
-            let totalPresencePct = 0;
-            let totalPaidKasCount = 0;
-
-            users.forEach(u => {
-                const attHistory = u.attendanceHistory || [];
-                const totalAtt = attHistory.length;
-                const hadirCount = attHistory.filter(a => a.status === 'Hadir').length;
-                const pct = totalAtt > 0 ? (hadirCount / totalAtt) * 100 : 0;
-                totalPresencePct += pct;
-
-                const kasHist = u.kasHistory || [];
-                const lastKas = kasHist[kasHist.length - 1];
-                if (lastKas && lastKas.status === 'Lunas') {
-                    totalPaidKasCount++;
-                }
-            });
-
-            const avgPresence = users.length > 0 ? Math.round(totalPresencePct / users.length) : 0;
-            const kasPct = users.length > 0 ? Math.round((totalPaidKasCount / users.length) * 100) : 0;
-
-            document.getElementById('stat-global-presence').innerText = `${avgPresence}%`;
-            document.getElementById('stat-global-kas').innerText = `${kasPct}%`;
-            document.getElementById('stat-total-members').innerText = users.length;
-
-            const tableBody = document.getElementById('public-member-table');
-            tableBody.innerHTML = '';
-
-            users.forEach(u => {
-                const attHistory = u.attendanceHistory || [];
-                const totalAtt = attHistory.length;
-                const hadirCount = attHistory.filter(a => a.status === 'Hadir').length;
-                const alpaCount = attHistory.filter(a => a.status === 'Alpa').length;
-                const pct = totalAtt > 0 ? Math.round((hadirCount / totalAtt) * 100) : 0;
-
-                const unpaidInfo = getUnpaidKasInfo(u);
-
-                let kasBadge = unpaidInfo.count === 0 
-                    ? '<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700"><i class="fa-solid fa-circle-check mr-1"></i> Aman (Lunas)</span>'
-                    : `<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-100 text-rose-700">Nunggak ${unpaidInfo.count} Pekan (Sejak ${unpaidInfo.earliestDate})</span>`;
-
-                let spBadge = '<span class="text-xs text-emerald-600 font-semibold"><i class="fa-solid fa-circle-check"></i> Aman</span>';
-                if (alpaCount >= 7) {
-                    spBadge = '<span class="px-2 py-0.5 rounded text-xs font-bold bg-purple-100 text-purple-700">Surat Peringatan 2 (SP2)</span>';
-                } else if (alpaCount > 4) {
-                    spBadge = '<span class="px-2 py-0.5 rounded text-xs font-bold bg-rose-100 text-rose-700">Surat Peringatan 1 (SP1)</span>';
-                } else if (alpaCount >= 3) {
-                    spBadge = '<span class="px-2 py-0.5 rounded text-xs font-bold bg-amber-100 text-amber-800">Lari Lapangan / Sekre</span>';
-                }
-
-                const tr = document.createElement('tr');
-                tr.className = 'hover:bg-slate-50/80 transition';
-                tr.innerHTML = `
-                    <td class="p-3 font-semibold text-slate-800">${u.name}</td>
-                    <td class="p-3"><span class="px-2 py-0.5 rounded-full text-xs capitalize ${u.role === 'inti' ? 'bg-amber-100 text-amber-800 font-bold' : 'bg-slate-100 text-slate-600'}">${u.role}</span></td>
-                    <td class="p-3">
-                        <div class="flex items-center space-x-2">
-                            <span class="font-bold">${pct}%</span>
-                            <div class="w-16 bg-slate-200 h-1.5 rounded-full overflow-hidden">
-                                <div class="bg-red-600 h-1.5" style="width: ${pct}%"></div>
-                            </div>
-                        </div>
-                    </td>
-                    <td class="p-3">${kasBadge}</td>
-                    <td class="p-3">${spBadge}</td>
-                `;
-                tableBody.appendChild(tr);
-            });
-        }
-
-        // --- ANGGOTA PORTAL ---
-        function renderAnggotaPortal() {
-            document.getElementById('sec-dashboard').classList.add('hidden');
-            document.getElementById('sec-inti').classList.add('hidden');
-            document.getElementById('sec-anggota').classList.remove('hidden');
-
-            document.getElementById('member-avatar').innerText = currentUser.name.charAt(0).toUpperCase();
-            document.getElementById('member-name-title').innerText = currentUser.name;
-
-            const attHistory = currentUser.attendanceHistory || [];
-            const totalAtt = attHistory.length;
-            const hadirCount = attHistory.filter(a => a.status === 'Hadir').length;
-            const alpaCount = attHistory.filter(a => a.status === 'Alpa').length;
-            const presencePct = totalAtt > 0 ? Math.round((hadirCount / totalAtt) * 100) : 0;
-
-            const kasHistory = currentUser.kasHistory || [];
-            const lunasKasList = kasHistory.filter(k => k.status === 'Lunas');
-            const totalKasTerbayar = lunasKasList.reduce((sum, k) => sum + k.amount, 0);
-
-            document.getElementById('member-stat-presence-pct').innerText = `${presencePct}%`;
-            document.getElementById('member-stat-presence-count').innerText = `(${hadirCount}/${totalAtt} Pertemuan)`;
-            document.getElementById('member-stat-kas-amount').innerText = `Rp ${totalKasTerbayar.toLocaleString('id-ID')}`;
-            document.getElementById('member-stat-kas-count').innerText = `(${lunasKasList.length} Pekan Lunas)`;
-            document.getElementById('member-stat-alpa-count').innerText = alpaCount;
-
-            // Alert Box SP
-            const alertBox = document.getElementById('konsekuensi-alert');
-            const alertTitle = document.getElementById('konsekuensi-title');
-            const alertDesc = document.getElementById('konsekuensi-desc');
-            const alertIcon = document.getElementById('konsekuensi-icon');
-
-            if (alpaCount >= 7) {
-                alertBox.className = 'rounded-2xl p-4 border bg-purple-50 border-purple-200 text-purple-900 flex items-start space-x-3';
-                alertIcon.className = 'fa-solid fa-triangle-exclamation text-2xl mt-0.5 text-purple-600';
-                alertTitle.innerText = 'Peringatan Teguran Keras (SP 2)';
-                alertDesc.innerText = `Anda telah Alpa sebanyak ${alpaCount} kali pertemuan! Anda resmi mendapatkan SP 2. Segera laporkan diri ke Pengurus Inti/Ketua PMR/PMI ASPESIA.`;
-                alertBox.classList.remove('hidden');
-            } else if (alpaCount > 4) {
-                alertBox.className = 'rounded-2xl p-4 border bg-rose-50 border-rose-200 text-rose-900 flex items-start space-x-3';
-                alertIcon.className = 'fa-solid fa-triangle-exclamation text-2xl mt-0.5 text-rose-600';
-                alertTitle.innerText = 'Peringatan Kedisiplinan (SP 1)';
-                alertDesc.innerText = `Jumlah Alpa Anda melebihi 4 pertemuan (${alpaCount} kali Alpa). Anda dikenakan SP 1 (Surat Peringatan 1).`;
-                alertBox.classList.remove('hidden');
-            } else if (alpaCount >= 3) {
-                alertBox.className = 'rounded-2xl p-4 border bg-amber-50 border-amber-200 text-amber-900 flex items-start space-x-3';
-                alertIcon.className = 'fa-solid fa-circle-exclamation text-2xl mt-0.5 text-amber-600';
-                alertTitle.innerText = 'Konsekuensi Alpa Pertemuan';
-                alertDesc.innerText = `Anda sudah ${alpaCount} kali Alpa. Konsekuensi: Wajib membersihkan Sekre PMR atau Lari Lapangan sebelum latihan rutin dimulai!`;
-                alertBox.classList.remove('hidden');
-            } else {
-                alertBox.classList.add('hidden');
-            }
-
-            // Alert Box Kas
-            const unpaidInfo = getUnpaidKasInfo(currentUser);
-            const tunggakanAlert = document.getElementById('tunggakan-alert');
-            const tunggakanDesc = document.getElementById('tunggakan-desc');
-
-            if (unpaidInfo.count > 0) {
-                tunggakanDesc.innerHTML = `Anda memiliki <b>${unpaidInfo.count} pekan</b> uang kas yang belum dibayar (Menunggak sejak tanggal <b>${unpaidInfo.earliestDate}</b>) dengan total <b>Rp ${unpaidInfo.total.toLocaleString('id-ID')}</b>. Silakan lunasi ke Pengurus Inti.`;
-                tunggakanAlert.classList.remove('hidden');
-            } else {
-                tunggakanAlert.classList.add('hidden');
-            }
-
-            // Logs
-            const attLogBody = document.getElementById('member-presence-log');
-            attLogBody.innerHTML = '';
-            if (attHistory.length === 0) {
-                attLogBody.innerHTML = '<tr><td colspan="3" class="p-4 text-center text-slate-400">Belum ada catatan presensi.</td></tr>';
-            } else {
-                attHistory.forEach(att => {
-                    let badgeClass = 'bg-emerald-100 text-emerald-700';
-                    if (att.status === 'Sakit') badgeClass = 'bg-blue-100 text-blue-700';
-                    if (att.status === 'Izin') badgeClass = 'bg-amber-100 text-amber-700';
-                    if (att.status === 'Alpa') badgeClass = 'bg-rose-100 text-rose-700';
-
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                        <td class="p-2.5 font-medium text-slate-800">${att.day}, ${att.date}</td>
-                        <td class="p-2.5"><span class="px-2 py-0.5 rounded-full text-xs font-bold ${badgeClass}">${att.status}</span></td>
-                        <td class="p-2.5 text-slate-500">${att.note || '-'}</td>
+                    let rowHtml = `
+                        <tr class="hover:bg-slate-50">
+                            <td class="p-3 font-semibold text-slate-800">${data.nama} ${isSelf ? '(Anda)' : ''}</td>
+                            <td class="p-3">${data.role}</td>
+                            <td class="p-3 flex items-center gap-2">
+                                <span>${data.absen} hari</span>
+                                ${isAdmin ? `
+                                    <button onclick="updateAbsen('${docId}', ${data.absen + 1})" class="bg-slate-200 px-1.5 py-0.5 rounded hover:bg-slate-300">+</button>
+                                    <button onclick="updateAbsen('${docId}', ${Math.max(0, data.absen - 1)})" class="bg-slate-200 px-1.5 py-0.5 rounded hover:bg-slate-300">-</button>
+                                ` : ''}
+                            </td>
+                            <td class="p-3">${spBadge}</td>
+                            <td class="p-3 font-medium text-emerald-600">
+                                Rp ${(data.kas || 0).toLocaleString('id-ID')}
+                                ${isAdmin ? `
+                                    <button onclick="updateKas('${docId}', ${(data.kas || 0) + 2000})" class="ml-2 bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded hover:bg-emerald-200">+2k</button>
+                                ` : ''}
+                            </td>
+                            ${isAdmin ? `
+                                <td class="p-3 text-right">
+                                    <button onclick="hapusAnggota('${docId}', '${data.nama}')" class="bg-rose-100 text-rose-700 px-2 py-1 rounded text-xs font-bold hover:bg-rose-200 transition">
+                                        <i class="fa-solid fa-trash mr-1"></i> Hapus
+                                    </button>
+                                </td>
+                            ` : ''}
+                        </tr>
                     `;
-                    attLogBody.appendChild(tr);
+                    tbody.innerHTML += rowHtml;
                 });
-            }
 
-            const kasLogBody = document.getElementById('member-kas-log');
-            kasLogBody.innerHTML = '';
-            if (kasHistory.length === 0) {
-                kasLogBody.innerHTML = '<tr><td colspan="3" class="p-4 text-center text-slate-400">Belum ada catatan kas (Status Kas Aman/Lunas).</td></tr>';
-            } else {
-                kasHistory.forEach((kas, index) => {
-                    let statusDetail = kas.status === 'Lunas'
-                        ? `<span class="px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700"><i class="fa-solid fa-check mr-1"></i> Dibayar tgl ${kas.paidDate}</span>`
-                        : `<span class="px-2 py-0.5 rounded-full text-xs font-bold bg-rose-100 text-rose-700"><i class="fa-solid fa-clock mr-1"></i> Menunggak sejak ${kas.periodDate}</span>`;
-
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                        <td class="p-2.5 font-medium text-slate-800">Minggu #${index + 1} (${kas.periodDate})</td>
-                        <td class="p-2.5 font-bold">${kas.amount > 0 ? 'Rp ' + kas.amount.toLocaleString('id-ID') : 'Rp 0'}</td>
-                        <td class="p-2.5">${statusDetail}</td>
-                    `;
-                    kasLogBody.appendChild(tr);
-                });
-            }
-        }
-
-        // --- INTI PORTAL ---
-        function renderIntiPortal() {
-            document.getElementById('sec-dashboard').classList.add('hidden');
-            document.getElementById('sec-anggota').classList.add('hidden');
-            document.getElementById('sec-inti').classList.remove('hidden');
-
-            document.getElementById('inti-name-title').innerText = currentUser.name;
-
-            renderIntiKasTable();
-            renderIntiAbsensiTable();
-        }
-
-        function switchIntiTab(tab) {
-            if (tab === 'kas') {
-                document.getElementById('subtab-kas').classList.remove('hidden');
-                document.getElementById('subtab-absensi').classList.add('hidden');
-                document.getElementById('tab-btn-kas').className = 'pb-3 px-4 font-bold text-sm text-red-600 border-b-2 border-red-600 flex items-center space-x-2';
-                document.getElementById('tab-btn-absensi').className = 'pb-3 px-4 font-bold text-sm text-slate-500 hover:text-slate-800 flex items-center space-x-2';
-            } else {
-                document.getElementById('subtab-kas').classList.add('hidden');
-                document.getElementById('subtab-absensi').classList.remove('hidden');
-                document.getElementById('tab-btn-absensi').className = 'pb-3 px-4 font-bold text-sm text-red-600 border-b-2 border-red-600 flex items-center space-x-2';
-                document.getElementById('tab-btn-kas').className = 'pb-3 px-4 font-bold text-sm text-slate-500 hover:text-slate-800 flex items-center space-x-2';
-            }
-        }
-
-        function renderIntiKasTable() {
-            const tableBody = document.getElementById('inti-kas-table');
-            tableBody.innerHTML = '';
-
-            users.forEach(u => {
-                const kasHistory = u.kasHistory || [];
-                const totalKasPaid = kasHistory
-                    .filter(k => k.status === 'Lunas')
-                    .reduce((sum, k) => sum + k.amount, 0);
-
-                const unpaidInfo = getUnpaidKasInfo(u);
-
-                let statusCol = unpaidInfo.count === 0 
-                    ? '<span class="text-xs font-semibold text-emerald-600"><i class="fa-solid fa-circle-check"></i> Aman (Lunas)</span>'
-                    : `<div class="text-xs text-rose-600 font-bold">Nunggak ${unpaidInfo.count} Pekan</div><div class="text-[10px] text-slate-500">Sejak: ${unpaidInfo.earliestDate} (Rp ${unpaidInfo.total.toLocaleString('id-ID')})</div>`;
-
-                const tr = document.createElement('tr');
-                tr.className = 'hover:bg-slate-50 transition';
-                tr.innerHTML = `
-                    <td class="p-3 font-semibold text-slate-800">${u.name}</td>
-                    <td class="p-3"><span class="px-2 py-0.5 rounded text-xs capitalize ${u.role === 'inti' ? 'bg-amber-100 text-amber-800 font-bold' : 'bg-slate-100 text-slate-600'}">${u.role}</span></td>
-                    <td class="p-3 font-bold text-emerald-600">Rp ${totalKasPaid.toLocaleString('id-ID')}</td>
-                    <td class="p-3">${statusCol}</td>
-                    <td class="p-3 text-right">
-                        <button onclick="openKasModal('${u.id}')" class="bg-red-600 hover:bg-red-700 text-white font-bold text-xs px-3 py-1.5 rounded-lg shadow transition">
-                            <i class="fa-solid fa-credit-card mr-1"></i> Bayar Kas
-                        </button>
-                    </td>
-                `;
-                tableBody.appendChild(tr);
+                document.getElementById('statTotal').innerText = totalUser;
+                document.getElementById('statKas').innerText = 'Rp ' + totalKas.toLocaleString('id-ID');
+                document.getElementById('statSP').innerText = totalSP;
             });
         }
 
-        function renderIntiAbsensiTable() {
-            const tableBody = document.getElementById('inti-absensi-table');
-            tableBody.innerHTML = '';
-
-            users.forEach(u => {
-                const attHistory = u.attendanceHistory || [];
-                const alpaCount = attHistory.filter(a => a.status === 'Alpa').length;
-                if (!tempAttendanceState[u.id]) {
-                    tempAttendanceState[u.id] = 'Hadir';
-                }
-
-                const tr = document.createElement('tr');
-                tr.className = 'hover:bg-slate-50 transition';
-                tr.innerHTML = `
-                    <td class="p-3 font-semibold text-slate-800">${u.name}</td>
-                    <td class="p-3"><span class="px-2 py-0.5 rounded text-xs capitalize ${u.role === 'inti' ? 'bg-amber-100 text-amber-800 font-bold' : 'bg-slate-100 text-slate-600'}">${u.role}</span></td>
-                    <td class="p-3 font-bold text-rose-600">${alpaCount} Kali</td>
-                    <td class="p-3">
-                        <div class="flex flex-wrap gap-1">
-                            ${['Hadir', 'Sakit', 'Izin', 'Alpa'].map(st => `
-                                <button type="button" onclick="setTempAttendance('${u.id}', '${st}')" class="text-xs px-2.5 py-1 rounded-lg border font-semibold transition ${tempAttendanceState[u.id] === st ? getStatusBtnColor(st) : 'bg-white text-slate-600 border-slate-200'}">
-                                    ${st}
-                                </button>
-                            `).join('')}
-                        </div>
-                    </td>
-                `;
-                tableBody.appendChild(tr);
-            });
+        // Fungsi Update Kas & Absen
+        async function updateAbsen(id, val) {
+            await db.collection('users').doc(id).update({ absen: val });
+        }
+        async function updateKas(id, val) {
+            await db.collection('users').doc(id).update({ kas: val });
         }
 
-        function getStatusBtnColor(st) {
-            if (st === 'Hadir') return 'bg-emerald-600 text-white border-emerald-600 shadow-sm';
-            if (st === 'Sakit') return 'bg-blue-600 text-white border-blue-600 shadow-sm';
-            if (st === 'Izin') return 'bg-amber-500 text-white border-amber-500 shadow-sm';
-            if (st === 'Alpa') return 'bg-rose-600 text-white border-rose-600 shadow-sm';
-        }
+        // Fitur Tambah Anggota (Khusus Admin)
+        function openModalTambah() { document.getElementById('modalTambah').classList.remove('hidden'); document.getElementById('modalTambah').classList.add('flex'); }
+        function closeModalTambah() { document.getElementById('modalTambah').classList.add('hidden'); document.getElementById('modalTambah').classList.remove('flex'); }
 
-        function setTempAttendance(userId, status) {
-            tempAttendanceState[userId] = status;
-            renderIntiAbsensiTable();
-        }
+        async function simpanAnggotaBaru() {
+            const nama = document.getElementById('addNama').value.trim();
+            const role = document.getElementById('addRole').value;
+            const pass = document.getElementById('addPassword').value.trim();
 
-        // SIMPAN ABSENSI KE FIREBASE CLOUD
-        function saveAttendanceToday() {
-            const selectedDateVal = document.getElementById('attendance-date-input').value;
-            const selectedDayVal = document.getElementById('attendance-day-input').value;
+            if (!nama || !pass) return alert('Semua kolom harus diisi!');
 
-            if (!selectedDateVal) {
-                alert('Pilih tanggal absensi terlebih dahulu!');
-                return;
-            }
-
-            const batch = db.batch();
-
-            users.forEach(u => {
-                const status = tempAttendanceState[u.id] || 'Hadir';
-                const currentHistory = u.attendanceHistory || [];
-                const updatedHistory = [{
-                    date: selectedDateVal,
-                    day: selectedDayVal,
-                    status: status,
-                    note: 'Latihan PMR/PMI ASPESIA'
-                }, ...currentHistory];
-
-                const userRef = db.collection("users").doc(u.id);
-                batch.update(userRef, { attendanceHistory: updatedHistory });
-            });
-
-            batch.commit().then(() => {
-                alert(`Absensi hari ${selectedDayVal}, ${selectedDateVal} berhasil tersimpan ke Database Cloud!`);
-            });
-        }
-
-        // PROSES BAYAR KAS KE FIREBASE CLOUD
-        function openKasModal(userId) {
-            selectedKasUserId = userId;
-            const targetUser = users.find(u => u.id === userId);
-            document.getElementById('modal-kas-member-name').innerText = targetUser.name;
-            document.getElementById('kas-date-input').value = new Date().toISOString().split('T')[0];
-            document.getElementById('kas-amount-input').value = 2000;
-            document.getElementById('modal-kas').classList.remove('hidden');
-        }
-
-        function processKasPayment(isPaid) {
-            const targetUser = users.find(u => u.id === selectedKasUserId);
-            const amountInput = parseInt(document.getElementById('kas-amount-input').value) || 2000;
-            const chosenDate = document.getElementById('kas-date-input').value || new Date().toISOString().split('T')[0];
-            const todayStr = new Date().toISOString().split('T')[0];
-
-            let kasHistory = [...(targetUser.kasHistory || [])];
-
-            if (isPaid) {
-                const unpaidItem = kasHistory.find(k => k.status === 'Belum Bayar');
-                if (unpaidItem) {
-                    unpaidItem.status = 'Lunas';
-                    unpaidItem.amount = amountInput;
-                    unpaidItem.paidDate = todayStr;
-                } else {
-                    kasHistory.push({
-                        periodDate: chosenDate,
-                        paidDate: todayStr,
-                        amount: amountInput,
-                        status: 'Lunas'
-                    });
-                }
-            } else {
-                kasHistory.push({
-                    periodDate: chosenDate,
-                    paidDate: '-',
-                    amount: 0,
-                    status: 'Belum Bayar'
-                });
-            }
-
-            db.collection("users").doc(targetUser.id).update({
-                kasHistory: kasHistory
-            }).then(() => {
-                alert(`Status Uang Kas ${targetUser.name} berhasil diperbarui di Cloud!`);
-                closeModal('modal-kas');
-            });
-        }
-
-        // TAMBAH USER BARU KE FIREBASE CLOUD
-        function openAddMemberModal(role) {
-            document.getElementById('add-user-role').value = role;
-            document.getElementById('add-user-fullname').value = '';
-            document.getElementById('add-user-password').value = '';
-
-            const title = document.getElementById('add-user-title');
-            title.innerText = role === 'inti' ? 'Tambah Pengurus Inti Baru' : 'Tambah Anggota PMR Baru';
-            document.getElementById('modal-add-user').classList.remove('hidden');
-        }
-
-        function handleAddUser(e) {
-            e.preventDefault();
-            const role = document.getElementById('add-user-role').value;
-            const name = document.getElementById('add-user-fullname').value.trim();
-            const password = document.getElementById('add-user-password').value.trim();
-
-            db.collection("users").add({
-                name: name,
-                password: password,
+            await db.collection('users').add({
+                nama: nama,
                 role: role,
-                kasHistory: [],
-                attendanceHistory: []
-            }).then(() => {
-                alert(`Berhasil mendaftarkan ${name} ke Cloud Database. Sekarang ${name} sudah bisa login!`);
-                closeModal('modal-add-user');
+                password: pass,
+                absen: 0,
+                kas: 0
             });
+            alert('Anggota baru berhasil ditambahkan!');
+            closeModalTambah();
+            document.getElementById('addNama').value = '';
         }
 
-        // GANTI PASSWORD KE FIREBASE CLOUD
-        function openChangePasswordModal() {
-            document.getElementById('new-password-input').value = '';
-            document.getElementById('modal-change-pass').classList.remove('hidden');
-        }
-
-        function handleChangePassword(e) {
-            e.preventDefault();
-            const newPass = document.getElementById('new-password-input').value.trim();
-            if (currentUser && newPass) {
-                db.collection("users").doc(currentUser.id).update({
-                    password: newPass
-                }).then(() => {
-                    alert('Password akun Anda berhasil diperbarui di Cloud Database!');
-                    closeModal('modal-change-pass');
-                });
+        // Fitur Hapus Anggota (Khusus Admin)
+        async function hapusAnggota(id, nama) {
+            if (confirm(`Apakah Anda yakin ingin menghapus "${nama}"? Data yang dihapus tidak bisa dikembalikan.`)) {
+                await db.collection('users').doc(id).delete();
+                alert(`Data ${nama} berhasil dihapus!`);
             }
+        }
+
+        // Fitur Ganti Password dengan Verifikasi Password Lama
+        function openModalPassword() { document.getElementById('modalPassword').classList.remove('hidden'); document.getElementById('modalPassword').classList.add('flex'); }
+        function closeModalPassword() { document.getElementById('modalPassword').classList.add('hidden'); document.getElementById('modalPassword').classList.remove('flex'); }
+
+        async function prosesGantiPassword() {
+            const passLama = document.getElementById('passLama').value.trim();
+            const passBaru = document.getElementById('passBaru').value.trim();
+
+            if (!passLama || !passBaru) return alert('Password lama dan baru wajib diisi!');
+
+            // Cek kebenaran password lama
+            if (passLama !== currentUser.password) {
+                return alert('Password LAMA Anda salah! Silakan coba lagi.');
+            }
+
+            await db.collection('users').doc(currentUser.id).update({ password: passBaru });
+            currentUser.password = passBaru;
+
+            alert('Password berhasil diperbarui! Silakan gunakan password baru ini untuk login berikutnya.');
+            closeModalPassword();
+            document.getElementById('passLama').value = '';
+            document.getElementById('passBaru').value = '';
         }
     </script>
 </body>
